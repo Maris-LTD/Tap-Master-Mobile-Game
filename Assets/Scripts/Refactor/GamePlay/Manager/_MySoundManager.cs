@@ -42,7 +42,7 @@ namespace Core.GamePlay
 
         public void Vibrate(){
             if(!_PlayerData.UserData.IsTurnOnVibration) return;
-            VibrationManager.Vibrate();
+            //VibrationManager.Vibrate();
         }
 
         private AudioClip GetAudioClip(SoundType type)

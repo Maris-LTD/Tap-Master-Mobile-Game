@@ -34,6 +34,7 @@ dependencies {
     implementation 'com.applovin:applovin-sdk:12.4.2' // Assets/MaxSdk/AppLovin/Editor/Dependencies.xml:4
     implementation 'com.google.android.gms:play-services-ads:23.0.0' // Assets/GoogleMobileAds/Editor/GoogleMobileAdsDependencies.xml:7
     implementation 'com.google.android.gms:play-services-base:18.3.0' // Assets/Firebase/Editor/AppDependencies.xml:17
+    // implementation 'com.google.android.ump:user-messaging-platform:2.1.0' // Assets/MaxSdk/AppLovin/Editor/Dependencies.xml:5
     implementation 'com.google.android.ump:user-messaging-platform:2.2.0' // Assets/GoogleMobileAds/Editor/GoogleUmpDependencies.xml:7
     implementation 'com.google.firebase:firebase-analytics:21.5.0' // Assets/Firebase/Editor/RemoteConfigDependencies.xml:15
     implementation 'com.google.firebase:firebase-analytics-unity:11.7.0' // Assets/Firebase/Editor/AnalyticsDependencies.xml:18

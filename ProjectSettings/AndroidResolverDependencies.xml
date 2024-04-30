@@ -9,6 +9,7 @@
     <package>com.applovin:applovin-sdk:12.4.2</package>
     <package>com.google.android.gms:play-services-ads:23.0.0</package>
     <package>com.google.android.gms:play-services-base:18.3.0</package>
+    <package>com.google.android.ump:user-messaging-platform:2.1.0</package>
     <package>com.google.android.ump:user-messaging-platform:2.2.0</package>
     <package>com.google.firebase:firebase-analytics:21.5.0</package>
     <package>com.google.firebase:firebase-analytics-unity:11.7.0</package>
@@ -27,7 +28,7 @@
   </files>
   <settings>
     <setting name="androidAbis" value="arm64-v8a,armeabi-v7a" />
-    <setting name="bundleId" value="com.Percas.TapOutTakeBlocksAway" />
+    <setting name="bundleId" value="game.tapout.tapaway.tapmaster" />
     <setting name="explodeAars" value="True" />
     <setting name="gradleBuildEnabled" value="True" />
     <setting name="gradlePropertiesTemplateEnabled" value="True" />

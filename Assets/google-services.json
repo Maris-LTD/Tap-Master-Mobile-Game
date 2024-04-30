@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "676053291941",
+    "project_id": "tap-out---take-blocks-away",
+    "storage_bucket": "tap-out---take-blocks-away.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:676053291941:android:11358bc2d8168faf7d8e4c",
+        "android_client_info": {
+          "package_name": "game.tapout.tapaway.tapmaster"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCMwBxktI5NSsrIBvmzgy5GU7RWn7SUpT0"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

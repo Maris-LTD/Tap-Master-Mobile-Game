@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "1088457693637",
+    "project_id": "ball-sort-quest",
+    "storage_bucket": "ball-sort-quest.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1088457693637:android:a8efc13836da6caf9e53ac",
+        "android_client_info": {
+          "package_name": "net.percas.ball.sort.quest"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAGZaWBhrfpiUMf92cUieQpBymH1pkUY4Q"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

@@ -24,6 +24,7 @@ namespace Core.UI.ExtendPopup
         private float _pivotPos;
         private int _coin;
         private bool _isWinGame;
+        private bool _isCollected = false;
 
         // public override void Awake(){
         //     _barWidth = _multipleBarImage.rectTransform.rect.width;
@@ -44,6 +45,7 @@ namespace Core.UI.ExtendPopup
             _cursor.GetComponent<RectTransform>().localPosition = new Vector3(_pivotPos, _cursor.localPosition.y, _cursor.localPosition.z);
             StartMovingCursor();
             _isWinGame = isWinGame;
+            _isCollected = false;
         }
 
         public void OnClickWatchAd()
@@ -101,6 +103,8 @@ namespace Core.UI.ExtendPopup
 
         public void OnClickClose()
         {
+            if (_isCollected) return;
+            _isCollected = true;
             _cursor.DOKill();
             _MySoundManager.Instance.PlaySound(_SoundType.ClickUIButton);
             var pos = _finalCoinText.GetComponent<RectTransform>().position;

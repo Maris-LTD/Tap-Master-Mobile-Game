@@ -9745,7 +9745,7 @@ MonoBehaviour:
       m_Calls: []
   fixedTime: 1
   use3dRotation: 0
-  ParticleType: 2
+  ParticleType: 3
   RectTransform: {fileID: 7123621543183399693}
 --- !u!1 &3543321458377645929
 GameObject:

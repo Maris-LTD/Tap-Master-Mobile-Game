@@ -19,6 +19,7 @@ namespace Core.UI.ExtendPopup
         [SerializeField] private GameObject _continueButton;
         [SerializeField] private SkeletonAnimation _skeletonAnimation;
         [SerializeField] Image _nativeAdImage;
+        private bool _isCollected;
 
         public void Show()
         {
@@ -46,6 +47,7 @@ namespace Core.UI.ExtendPopup
                 _watchAdsButton.SetActive(false);
             }
             AddNativeAd();
+            _isCollected = false;
         }
 
         public void OnClickClose()
@@ -72,6 +74,8 @@ namespace Core.UI.ExtendPopup
 
         public void OnClickToContinue()
         {
+            if (_isCollected) return;
+            _isCollected = true;
             _MySoundManager.Instance.PlaySound(_SoundType.ClickUIButton);
             //base.Hide(() => {_GameManager.Instance.NextLevel();}); 
             if (_coinText.IsActive())

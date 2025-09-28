@@ -14,10 +14,6 @@ using System.Runtime.InteropServices;
 
 public abstract class MaxSdkBase
 {
-    // Shared Properties
-    protected static readonly MaxUserSegment SharedUserSegment = new MaxUserSegment();
-    protected static readonly MaxTargetingData SharedTargetingData = new MaxTargetingData();
-
     /// <summary>
     /// This enum represents the user's geography used to determine the type of consent flow shown to the user.
     /// </summary>
@@ -46,7 +42,7 @@ public abstract class MaxSdkBase
     public enum AppTrackingStatus
     {
         /// <summary>
-        /// Device is on < iOS14, AppTrackingTransparency.framework is not available.
+        /// Device is on &lt; iOS14, AppTrackingTransparency.framework is not available.
         /// </summary>
         Unavailable,
 
@@ -72,6 +68,42 @@ public abstract class MaxSdkBase
     }
 #endif
 
+    /// <summary>
+    /// An enum describing the adapter's initialization status.
+    /// </summary>
+    public enum InitializationStatus
+    {
+        /// <summary>
+        /// The adapter is not initialized. Note: networks need to be enabled for an ad unit id to be initialized.
+        /// </summary>
+        NotInitialized = -4,
+
+        /// <summary>
+        /// The 3rd-party SDK does not have an initialization callback with status.
+        /// </summary>
+        DoesNotApply = -3,
+
+        /// <summary>
+        /// The 3rd-party SDK is currently initializing.
+        /// </summary>
+        Initializing = -2,
+
+        /// <summary>
+        /// The 3rd-party SDK explicitly initialized, but without a status.
+        /// </summary>
+        InitializedUnknown = -1,
+
+        /// <summary>
+        /// The 3rd-party SDK initialization failed.
+        /// </summary>
+        InitializedFailure = 0,
+
+        /// <summary>
+        /// The 3rd-party SDK initialization was successful.
+        /// </summary>
+        InitializedSuccess = 1
+    }
+
     public enum AdViewPosition
     {
         TopLeft,
@@ -85,17 +117,53 @@ public abstract class MaxSdkBase
         BottomRight
     }
 
-    public enum BannerPosition
+    public class AdViewConfiguration
     {
-        TopLeft,
-        TopCenter,
-        TopRight,
-        Centered,
-        CenterLeft,
-        CenterRight,
-        BottomLeft,
-        BottomCenter,
-        BottomRight
+        /// <summary>
+        /// The position of the ad.
+        /// </summary>
+        public AdViewPosition Position { get; private set; }
+
+        /// <summary>
+        /// The horizontal (X) position of the banner, relative to the top-left corner of the screen's safe area.
+        /// </summary>
+        public float XCoordinate { get; private set; }
+
+        /// <summary>
+        /// The vertical (Y) position of the banner, relative to the top-left corner of the screen's safe area.
+        /// </summary>
+        public float YCoordinate { get; private set; }
+
+        /// <summary>
+        /// Whether to use adaptive banners. Has no effect on MREC ads.
+        /// </summary>
+        public bool IsAdaptive { get; set; }
+
+        internal bool UseCoordinates { get; private set; }
+
+        /// <summary>
+        /// Creates an AdViewConfiguration with the given AdViewPosition.
+        /// </summary>
+        /// <param name="position">The position of the ad. Must not be null.</param>
+        public AdViewConfiguration(AdViewPosition position)
+        {
+            Position = position;
+            IsAdaptive = true;
+            UseCoordinates = false;
+        }
+
+        /// <summary>
+        /// Creates an AdViewConfiguration with the given x and y coordinates.
+        /// </summary>
+        /// <param name="x">The horizontal (X) position of the banner, relative to the top-left corner of the screen's safe area.</param>
+        /// <param name="y">The vertical (Y) position of the banner, relative to the top-left corner of the screen's safe area.</param>
+        public AdViewConfiguration(float x, float y)
+        {
+            XCoordinate = x;
+            YCoordinate = y;
+            IsAdaptive = true;
+            UseCoordinates = true;
+        }
     }
 
     public class SdkConfiguration
@@ -139,11 +207,26 @@ public abstract class MaxSdkBase
 #if UNITY_EDITOR
             sdkConfiguration.AppTrackingStatus = AppTrackingStatus.Authorized;
 #endif
-            var currentRegion = RegionInfo.CurrentRegion;
-            sdkConfiguration.CountryCode = currentRegion != null ? currentRegion.TwoLetterISORegionName : "US";
+            sdkConfiguration.CountryCode = TryGetCountryCode();
             sdkConfiguration.IsTestModeEnabled = false;
 
             return sdkConfiguration;
+        }
+
+        private static string TryGetCountryCode()
+        {
+            try
+            {
+                return RegionInfo.CurrentRegion.TwoLetterISORegionName;
+            }
+#pragma warning disable 0168
+            catch (Exception ignored)
+#pragma warning restore 0168
+            {
+                // Ignored
+            }
+
+            return "US";
         }
 #endif
 
@@ -279,17 +362,39 @@ public abstract class MaxSdkBase
         /// </summary>
         FullscreenAdNotReady = -24,
 
-#if UNITY_ANDROID
+#if UNITY_IOS || UNITY_IPHONE
         /// <summary>
-        /// This error code indicates that the SDK failed to load an ad because it could not find the top Activity.
+        /// This error code indicates you attempted to present a fullscreen ad from an invalid view controller.
         /// </summary>
-        NoActivity = -5601,
+        FullscreenAdInvalidViewController = -25,
+#endif
 
+        /// <summary>
+        /// This error code indicates you are attempting to load a fullscreen ad while another fullscreen ad is already loading.
+        /// </summary>
+        FullscreenAdAlreadyLoading = -26,
+
+        /// <summary>
+        /// This error code indicates you are attempting to load a fullscreen ad while another fullscreen ad is still showing.
+        /// </summary>
+        FullscreenAdLoadWhileShowing = -27,
+
+#if UNITY_ANDROID
         /// <summary>
         /// This error code indicates that the SDK failed to display an ad because the user has the "Don't Keep Activities" developer setting enabled.
         /// </summary>
         DontKeepActivitiesEnabled = -5602,
 #endif
+
+        /// <summary>
+        /// This error code indicates that the SDK failed to load an ad because the publisher provided an invalid ad unit identifier.
+        /// Possible reasons for an invalid ad unit identifier:
+        /// 1. Ad unit identifier is malformed or does not exist
+        /// 2. Ad unit is disabled
+        /// 3. Ad unit is not associated with the current app's package name
+        /// 4. Ad unit was created within the last 30-60 minutes
+        /// </summary>
+        InvalidAdUnitId = -5603
     }
 
     /**
@@ -445,6 +550,7 @@ public abstract class MaxSdkBase
         public string AdapterClassName { get; private set; }
         public string AdapterVersion { get; private set; }
         public string SdkVersion { get; private set; }
+        public InitializationStatus InitializationStatus { get; private set; }
 
         public MediatedNetworkInfo(IDictionary<string, object> mediatedNetworkDictionary)
         {
@@ -453,6 +559,8 @@ public abstract class MaxSdkBase
             AdapterClassName = MaxSdkUtils.GetStringFromDictionary(mediatedNetworkDictionary, "adapterClassName", "");
             AdapterVersion = MaxSdkUtils.GetStringFromDictionary(mediatedNetworkDictionary, "adapterVersion", "");
             SdkVersion = MaxSdkUtils.GetStringFromDictionary(mediatedNetworkDictionary, "sdkVersion", "");
+            var initializationStatusInt = MaxSdkUtils.GetIntFromDictionary(mediatedNetworkDictionary, "initializationStatus", (int) InitializationStatus.NotInitialized);
+            InitializationStatus = InitializationStatusFromCode(initializationStatusInt);
         }
 
         public override string ToString()
@@ -460,7 +568,20 @@ public abstract class MaxSdkBase
             return "[MediatedNetworkInfo name: " + Name +
                    ", adapterClassName: " + AdapterClassName +
                    ", adapterVersion: " + AdapterVersion +
-                   ", sdkVersion: " + SdkVersion + "]";
+                   ", sdkVersion: " + SdkVersion +
+                   ", initializationStatus: " + InitializationStatus + "]";
+        }
+
+        private static InitializationStatus InitializationStatusFromCode(int code)
+        {
+            if (Enum.IsDefined(typeof(InitializationStatus), code))
+            {
+                return (InitializationStatus) code;
+            }
+            else
+            {
+                return InitializationStatus.NotInitialized;
+            }
         }
     }
 
@@ -533,11 +654,21 @@ public abstract class MaxSdkBase
     }
 
     /// <summary>
+    /// Determines whether ad events raised by the AppLovin's Unity plugin should be invoked on the Unity main thread.
+    /// </summary>
+    public static bool? InvokeEventsOnUnityMainThread { get; set; }
+
+    /// <summary>
     /// The CMP service, which provides direct APIs for interfacing with the Google-certified CMP installed, if any.
     /// </summary>
     public static MaxCmpService CmpService
     {
         get { return MaxCmpService.Instance; }
+    }
+
+    internal static bool DisableAllLogs
+    {
+        get; private set;
     }
 
     protected static void ValidateAdUnitIdentifier(string adUnitIdentifier, string debugPurpose)
@@ -563,9 +694,6 @@ public abstract class MaxSdkBase
         var metaData = new Dictionary<string, string>(2);
         metaData.Add("UnityVersion", Application.unityVersion);
 
-        var graphicsMemorySize = SystemInfo.graphicsMemorySize;
-        metaData.Add("GraphicsMemorySizeMegabytes", graphicsMemorySize.ToString());
-
         return Json.Serialize(metaData);
     }
 
@@ -585,6 +713,15 @@ public abstract class MaxSdkBase
         return new Rect(originX, originY, width, height);
     }
 
+    protected static void HandleExtraParameter(string key, string value)
+    {
+        bool disableAllLogs;
+        if ("disable_all_logs".Equals(key) && bool.TryParse(value, out disableAllLogs))
+        {
+            DisableAllLogs = disableAllLogs;
+        }
+    }
+
     /// <summary>
     /// Handles forwarding callbacks from native to C#.
     /// </summary>
@@ -602,7 +739,7 @@ public abstract class MaxSdkBase
 
             var eventName = MaxSdkUtils.GetStringFromDictionary(eventProps, "name", "");
             MaxSdkLogger.UserError("Unable to notify ad delegate due to an error in the publisher callback '" + eventName + "' due to exception: " + exception.Message);
-            Debug.LogException(exception);
+            MaxSdkLogger.LogException(exception);
         }
     }
 
@@ -622,6 +759,22 @@ public abstract class MaxSdkBase
         return Json.Serialize(data);
     }
 
+    #region Obsolete
+
+    [Obsolete("This API has been deprecated and will be removed in a future release. Please use AdViewPosition instead.")]
+    public enum BannerPosition
+    {
+        TopLeft,
+        TopCenter,
+        TopRight,
+        Centered,
+        CenterLeft,
+        CenterRight,
+        BottomLeft,
+        BottomCenter,
+        BottomRight
+    }
+
     [Obsolete("This API has been deprecated and will be removed in a future release.")]
     public enum ConsentDialogState
     {
@@ -629,6 +782,8 @@ public abstract class MaxSdkBase
         Applies,
         DoesNotApply
     }
+
+    #endregion
 }
 
 /// <summary>
@@ -636,46 +791,6 @@ public abstract class MaxSdkBase
 /// </summary>
 internal static class AdPositionExtenstion
 {
-    public static string ToSnakeCaseString(this MaxSdkBase.BannerPosition position)
-    {
-        if (position == MaxSdkBase.BannerPosition.TopLeft)
-        {
-            return "top_left";
-        }
-        else if (position == MaxSdkBase.BannerPosition.TopCenter)
-        {
-            return "top_center";
-        }
-        else if (position == MaxSdkBase.BannerPosition.TopRight)
-        {
-            return "top_right";
-        }
-        else if (position == MaxSdkBase.BannerPosition.Centered)
-        {
-            return "centered";
-        }
-        else if (position == MaxSdkBase.BannerPosition.CenterLeft)
-        {
-            return "center_left";
-        }
-        else if (position == MaxSdkBase.BannerPosition.CenterRight)
-        {
-            return "center_right";
-        }
-        else if (position == MaxSdkBase.BannerPosition.BottomLeft)
-        {
-            return "bottom_left";
-        }
-        else if (position == MaxSdkBase.BannerPosition.BottomCenter)
-        {
-            return "bottom_center";
-        }
-        else // position == MaxSdkBase.BannerPosition.BottomRight
-        {
-            return "bottom_right";
-        }
-    }
-
     public static string ToSnakeCaseString(this MaxSdkBase.AdViewPosition position)
     {
         if (position == MaxSdkBase.AdViewPosition.TopLeft)
@@ -713,76 +828,6 @@ internal static class AdPositionExtenstion
         else // position == MaxSdkBase.AdViewPosition.BottomRight
         {
             return "bottom_right";
-        }
-    }
-}
-
-namespace AppLovinMax.Internal.API
-{
-    [Obsolete("This class has been deprecated and will be removed in a future SDK release.")]
-    public class CFError
-    {
-        public int Code { get; private set; }
-
-        public string Message { get; private set; }
-
-        public static CFError Create(int code = -1, string message = "")
-        {
-            return new CFError(code, message);
-        }
-
-        private CFError(int code, string message)
-        {
-            Code = code;
-            Message = message;
-        }
-
-        public override string ToString()
-        {
-            return "[CFError Code: " + Code +
-                   ", Message: " + Message + "]";
-        }
-    }
-
-    [Obsolete("This enum has been deprecated. Please use `MaxSdk.GetSdkConfiguration().ConsentFlowUserGeography` instead.")]
-    public enum CFType
-    {
-        Unknown,
-        Standard,
-        Detailed
-    }
-
-    public class CFService
-    {
-        [Obsolete("This property has been deprecated. Please use `MaxSdk.GetSdkConfiguration().ConsentFlowUserGeography` instead.")]
-        public static CFType CFType
-        {
-            get
-            {
-                switch (MaxSdk.GetSdkConfiguration().ConsentFlowUserGeography)
-                {
-                    case MaxSdkBase.ConsentFlowUserGeography.Unknown:
-                        return CFType.Unknown;
-                    case MaxSdkBase.ConsentFlowUserGeography.Gdpr:
-                        return CFType.Detailed;
-                    case MaxSdkBase.ConsentFlowUserGeography.Other:
-                        return CFType.Standard;
-                    default:
-                        throw new ArgumentOutOfRangeException();
-                }
-            }
-        }
-
-        [Obsolete("This method has been deprecated. Please use `MaxSdk.CmpService.ShowCmpForExistingUser` instead.")]
-        public static void SCF(Action<CFError> onFlowCompletedAction)
-        {
-            MaxSdkBase.CmpService.ShowCmpForExistingUser(error =>
-            {
-                if (onFlowCompletedAction == null) return;
-
-                var cfError = error == null ? null : CFError.Create((int) error.Code, error.Message);
-                onFlowCompletedAction(cfError);
-            });
         }
     }
 }

@@ -75,7 +75,7 @@ namespace Core.GamePlay
         public void Vibrate()
         {
             if (!_PlayerData.UserData.IsTurnOnVibration) return;
-            Vibration.VibrateAndroid(50);
+            //Vibration.VibrateAndroid(50);
         }
 
         private AudioClip GetAudioClip(_SoundType type)
